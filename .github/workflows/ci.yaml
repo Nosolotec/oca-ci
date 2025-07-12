@@ -1,9 +1,10 @@
 name: ci
 
 on:
+  workflow_dispatch:
   push:
     branches:
-      - master
+      - master-ns
   pull_request:
   schedule:
     - cron: "0 4 * * *"
@@ -16,107 +17,36 @@ jobs:
   main:
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 16
       fail-fast: false
       matrix:
         include:
           # odoo/odoo
-          - python_version: "3.6"
-            codename: focal
-            odoo_version: "12.0"
-            odoo_org_repo: "odoo/odoo"
-            image_name: py3.6-odoo12.0
-          - python_version: "3.6"
-            codename: focal
-            odoo_version: "13.0"
-            odoo_org_repo: "odoo/odoo"
-            image_name: py3.6-odoo13.0
-          - python_version: "3.6"
-            codename: focal
-            odoo_version: "14.0"
-            odoo_org_repo: "odoo/odoo"
-            image_name: py3.6-odoo14.0
-          - python_version: "3.8"
-            codename: focal
-            odoo_version: "14.0"
-            odoo_org_repo: "odoo/odoo"
-            image_name: py3.8-odoo14.0
-          - python_version: "3.8"
-            codename: focal
-            odoo_version: "15.0"
-            odoo_org_repo: "odoo/odoo"
-            image_name: py3.8-odoo15.0
-          - python_version: "3.9"
-            codename: focal
-            odoo_version: "15.0"
-            odoo_org_repo: "odoo/odoo"
-            image_name: py3.9-odoo15.0
-          - python_version: "3.10"
+          - python_version: "3.12"
             codename: jammy
-            odoo_version: "16.0"
+            odoo_version: "18.0"
             odoo_org_repo: "odoo/odoo"
-            image_name: py3.10-odoo16.0
+            odoo_enterprise_org_repo: "Nosolotec/enterprise"
+            image_name: py3.12-odoo18.0
+            odoo_config_setting: "--config-setting=editable_mode=compat"
           - python_version: "3.10"
             codename: jammy
             odoo_version: "17.0"
             odoo_org_repo: "odoo/odoo"
+            odoo_enterprise_org_repo: "Nosolotec/enterprise"
             image_name: py3.10-odoo17.0
-          - python_version: "3.10"
+            odoo_config_setting: "--config-setting=editable_mode=compat"
+          - python_version: "3.7"
             codename: jammy
-            odoo_version: "18.0"
-            odoo_org_repo: "odoo/odoo"
-            image_name: py3.10-odoo18.0
-          # oca/ocb
-          - python_version: "3.6"
-            codename: focal
-            odoo_version: "12.0"
-            odoo_org_repo: "oca/ocb"
-            image_name: py3.6-ocb12.0
-          - python_version: "3.6"
-            codename: focal
             odoo_version: "13.0"
-            odoo_org_repo: "oca/ocb"
-            image_name: py3.6-ocb13.0
-          - python_version: "3.6"
-            codename: focal
-            odoo_version: "14.0"
-            odoo_org_repo: "oca/ocb"
-            image_name: py3.6-ocb14.0
-          - python_version: "3.8"
-            codename: focal
-            odoo_version: "14.0"
-            odoo_org_repo: "oca/ocb"
-            image_name: py3.8-ocb14.0
-          - python_version: "3.8"
-            codename: focal
-            odoo_version: "15.0"
-            odoo_org_repo: "oca/ocb"
-            image_name: py3.8-ocb15.0
-          - python_version: "3.9"
-            codename: focal
-            odoo_version: "15.0"
-            odoo_org_repo: "oca/ocb"
-            image_name: py3.9-ocb15.0
-          - python_version: "3.10"
-            codename: jammy
-            odoo_version: "16.0"
-            odoo_org_repo: "oca/ocb"
-            image_name: py3.10-ocb16.0
-          - python_version: "3.10"
-            codename: jammy
-            odoo_version: "17.0"
-            odoo_org_repo: "oca/ocb"
-            image_name: py3.10-ocb17.0
-          - python_version: "3.10"
-            codename: jammy
-            odoo_version: "18.0"
-            odoo_org_repo: "oca/ocb"
-            image_name: py3.10-ocb18.0
+            odoo_org_repo: "odoo/odoo"
+            odoo_enterprise_org_repo: "Nosolotec/enterprise"
+            setuptools_constraint: "<58"  # vatnumber needs setuptools with 2to3 support
+            image_name: py3.7-odoo13.0
     services:
       postgres:
-        image: postgres:12
+        image: postgres:14.0
         env:
-          POSTGRES_USER: odoo
+          POSTGRES_USER: odoo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
           POSTGRES_PASSWORD: odoo
           POSTGRES_DB: odoo
         ports:
@@ -133,39 +63,45 @@ jobs:
       - name: Build image
         uses: docker/build-push-action@v6
         with:
-          file: "Dockerfile${{ matrix.python_version == '3.6' && '-legacypy' || '' }}"
           build-args: |
             codename=${{ matrix.codename }}
             python_version=${{ matrix.python_version }}
             odoo_version=${{ matrix.odoo_version }}
             odoo_org_repo=${{ matrix.odoo_org_repo }}
+            odoo_enterprise_org_repo=${{ matrix.odoo_enterprise_org_repo }}
+            setuptools_constraint=${{ matrix.setuptools_constraint }}
+            odoo_config_setting=${{ matrix.odoo_config_setting }}
+            GIT_TOKEN=${{ secrets.GIT_TOKEN }}
           tags: |
-            ghcr.io/oca/oca-ci/${{ matrix.image_name }}:latest
+            ghcr.io/Nosolotec/oca-ci/${{ matrix.image_name }}:latest
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
-          cache-from: type=registry,ref=ghcr.io/oca/oca-ci/${{ matrix.image_name }}:latest
+          cache-from: type=registry,ref=ghcr.io/Nosolotec/oca-ci/${{ matrix.image_name }}:latest
           cache-to: type=local,dest=/tmp/.buildx-cache
           load: true
       - name: Checkout
         uses: actions/checkout@v4
       - name: Tests
-        run: docker run -v ${PWD}/tests:/mnt/tests --network=host -e PGHOST=localhost ghcr.io/oca/oca-ci/${{ matrix.image_name }}:latest /mnt/tests/runtests.sh -v
+        run: docker run -v ${PWD}/tests:/mnt/tests --network=host -e PGHOST=localhost ghcr.io/Nosolotec/oca-ci/${{ matrix.image_name }}:latest /mnt/tests/runtests.sh -v
         # Don't bother with Odoo 8 and 9 for now...
         if: ${{ matrix.odoo_version != '8.0' && matrix.odoo_version != '9.0' }}
       - name: Push image
         uses: docker/build-push-action@v6
         with:
-          file: "Dockerfile${{ matrix.python_version == '3.6' && '-legacypy' || '' }}"
           build-args: |
             codename=${{ matrix.codename }}
             python_version=${{ matrix.python_version }}
             odoo_version=${{ matrix.odoo_version }}
             odoo_org_repo=${{ matrix.odoo_org_repo }}
+            odoo_enterprise_org_repo=${{ matrix.odoo_enterprise_org_repo }}
+            setuptools_constraint=${{ matrix.setuptools_constraint }}
+            odoo_config_setting=${{ matrix.odoo_config_setting }}
+            GIT_TOKEN=${{ secrets.GIT_TOKEN }}
           tags: |
-            ghcr.io/oca/oca-ci/${{ matrix.image_name }}:latest
+            ghcr.io/Nosolotec/oca-ci/${{ matrix.image_name }}:latest
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=inline
           push: true
-        if: ${{ github.repository_owner == 'OCA' && github.ref == 'refs/heads/master' }}
+        if: ${{ github.repository_owner == 'Nosolotec' && github.ref == 'refs/heads/master-ns' }}

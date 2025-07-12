@@ -9,6 +9,7 @@ RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -qq --no-install-recommends \
         ca-certificates \
         curl \
+        unzip \
         gettext \
         git \
         gnupg \
@@ -18,11 +19,6 @@ RUN apt-get update -qq \
         pipx
 
 ENV PIPX_BIN_DIR=/usr/local/bin
-
-# Make pip work in standard-based mode only This disables use of deprecated
-# setup.py bdist_wheel and.py develop commands in favor of the PEP 517 and PEP
-# 660 interfaces.
-ENV PIP_USE_PEP517=1
 
 # Install wkhtml
 RUN case $(lsb_release -c -s) in \
@@ -105,16 +101,20 @@ RUN pipx inject --pip-args="--no-cache-dir" pyproject-dependencies $build_deps
 
 # Make a virtualenv for Odoo so we isolate from system python dependencies and
 # make sure addons we test declare all their python dependencies properly
+ARG setuptools_constraint
 RUN python$python_version -m venv /opt/odoo-venv \
-    && /opt/odoo-venv/bin/pip install -U "pip" \
+    && /opt/odoo-venv/bin/pip install -U "setuptools$setuptools_constraint" "wheel" "pip" \
     && /opt/odoo-venv/bin/pip list
 ENV PATH=/opt/odoo-venv/bin:$PATH
 
 ARG odoo_version
+ARG odoo_org_repo=odoo/odoo
+ARG odoo_enterprise_org_repo=odoo/enterprise
+ARG GIT_TOKEN=""
 
 # Install Odoo requirements (use ADD for correct layer caching).
 # We use requirements from OCB for easier maintenance of older versions.
-ADD https://raw.githubusercontent.com/OCA/OCB/$odoo_version/requirements.txt /tmp/ocb-requirements.txt
+ADD https://raw.githubusercontent.com/$odoo_org_repo/$odoo_version/requirements.txt /tmp/ocb-requirements.txt
 # The sed command is to use the latest version of gevent and greenlet. The
 # latest version works with all versions of Odoo that we support here, and the
 # oldest pinned in Odoo's requirements.txt don't have wheels, and don't build
@@ -132,13 +132,17 @@ RUN pip install --no-cache-dir \
   websocket-client
 
 # Install Odoo (use ADD for correct layer caching)
-ARG odoo_org_repo=odoo/odoo
 ADD https://api.github.com/repos/$odoo_org_repo/git/refs/heads/$odoo_version /tmp/odoo-version.json
 RUN mkdir /tmp/getodoo \
     && (curl -sSL https://github.com/$odoo_org_repo/tarball/$odoo_version | tar -C /tmp/getodoo -xz) \
     && mv /tmp/getodoo/* /opt/odoo \
     && rmdir /tmp/getodoo
-RUN pip install --no-cache-dir -e /opt/odoo --config-setting=editable_mode=compat \
+RUN (curl -sSL --insecure -H "Authorization: token ${GIT_TOKEN}" https://github.com/$odoo_enterprise_org_repo/archive/refs/heads/$odoo_version.zip -o /tmp/enterprise.zip) \
+    && unzip -q /tmp/enterprise.zip -d /tmp/enterprise \
+    && mv /tmp/enterprise/enterprise-$odoo_version/* /opt/odoo/addons \
+    && rmdir /tmp/enterprise --ignore-fail-on-non-empty
+ARG odoo_config_setting="--config-setting=editable_mode=compat"
+RUN pip install --no-cache-dir -e /opt/odoo $odoo_config_setting \
     && pip list
 
 # Make an empty odoo.cfg
@@ -149,6 +153,7 @@ ENV OPENERP_SERVER=/etc/odoo.cfg
 COPY bin/* /usr/local/bin/
 
 ENV ODOO_VERSION=$odoo_version
+ENV GIT_TOKEN=
 ENV PGHOST=postgres
 ENV PGUSER=odoo
 ENV PGPASSWORD=odoo
