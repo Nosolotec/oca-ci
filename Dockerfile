@@ -108,8 +108,8 @@ RUN python$python_version -m venv /opt/odoo-venv \
 ENV PATH=/opt/odoo-venv/bin:$PATH
 
 ARG odoo_version
-ARG odoo_org_repo=odoo/odoo
-ARG odoo_enterprise_org_repo=odoo/enterprise
+ARG odoo_org_repo=Nosolotec/odoo
+ARG odoo_enterprise_org_repo=Nosolotec/enterprise
 ARG GIT_TOKEN=""
 
 # Install Odoo requirements (use ADD for correct layer caching).
