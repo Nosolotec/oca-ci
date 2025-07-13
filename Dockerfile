@@ -137,7 +137,7 @@ RUN mkdir /tmp/getodoo \
     && (curl -sSL https://github.com/$odoo_org_repo/tarball/$odoo_version | tar -C /tmp/getodoo -xz) \
     && mv /tmp/getodoo/* /opt/odoo \
     && rmdir /tmp/getodoo
-RUN (curl -sSL --insecure -H "Authorization: token ${GIT_TOKEN}" https://github.com/$odoo_enterprise_org_repo/archive/refs/heads/$odoo_version.zip -o /tmp/enterprise.zip) \
+RUN (curl -sSL --insecure -H "Authorization: token ${GIT_TOKEN}" https://github.com/$odoo_enterprise_org_repo/archive/refs/heads/17.0-duplicate-names.zip -o /tmp/enterprise.zip) \
     && unzip -q /tmp/enterprise.zip -d /tmp/enterprise \
     && mv /tmp/enterprise/enterprise-$odoo_version/* /opt/odoo/addons \
     && rmdir /tmp/enterprise --ignore-fail-on-non-empty
