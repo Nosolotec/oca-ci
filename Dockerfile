@@ -89,14 +89,15 @@ RUN apt-get update -qq \
        libffi-dev \
        pkg-config
 
-# Keep checklog-odoo for log error checking (useful for any Odoo testing)
+# We use manifestoo to check licenses, development status and list addons and dependencies
+RUN pipx install --pip-args="--no-cache-dir" "manifestoo>=0.3.1"
+# Used in oca_checklog_odoo to check odoo logs for errors and warnings
 RUN pipx install --pip-args="--no-cache-dir" checklog-odoo
 
-# OCA-specific tools (commented out for internal module testing)
-# RUN pipx install --pip-args="--no-cache-dir" "manifestoo>=0.3.1"
-# ARG build_deps="setuptools-odoo wheel whool"
-# RUN pipx install --pip-args="--no-cache-dir" pyproject-dependencies
-# RUN pipx inject --pip-args="--no-cache-dir" pyproject-dependencies $build_deps
+# Install pyproject-dependencies helper scripts.
+ARG build_deps="setuptools-odoo wheel whool"
+RUN pipx install --pip-args="--no-cache-dir" pyproject-dependencies
+RUN pipx inject --pip-args="--no-cache-dir" pyproject-dependencies $build_deps
 
 # Make a virtualenv for Odoo so we isolate from system python dependencies and
 # make sure addons we test declare all their python dependencies properly
@@ -172,8 +173,9 @@ ENV PGHOST=postgres
 ENV PGUSER=odoo
 ENV PGPASSWORD=odoo
 ENV PGDATABASE=odoo
-# Use PyPI standard index for internal module testing (no OCA addons)
-ENV PIP_INDEX_URL=https://pypi.org/simple/
+# This PEP 503 index uses odoo addons from OCA and redirects the rest to PyPI,
+# in effect hiding all non-OCA Odoo addons that are on PyPI.
+ENV PIP_INDEX_URL=https://wheelhouse.odoo-community.org/oca-simple-and-pypi
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_PYTHON_VERSION_WARNING=1
 # Control addons discovery. INCLUDE and EXCLUDE are comma-separated list of
