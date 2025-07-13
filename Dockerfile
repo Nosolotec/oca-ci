@@ -176,6 +176,13 @@ ENV PGDATABASE=odoo
 # This PEP 503 index uses odoo addons from OCA and redirects the rest to PyPI,
 # in effect hiding all non-OCA Odoo addons that are on PyPI.
 ENV PIP_INDEX_URL=https://wheelhouse.odoo-community.org/oca-simple-and-pypi
+# Create constraints file to block OCA l10n-ecuador modules that conflict with Enterprise
+RUN echo "# Block OCA l10n-ecuador modules that conflict with Enterprise" > /opt/pip-constraints.txt \
+    && echo "odoo-addon-l10n-ec-account-edi==999.0.0  # Block installation" >> /opt/pip-constraints.txt \
+    && echo "odoo-addon-l10n-ec-base==999.0.0         # Block installation" >> /opt/pip-constraints.txt \
+    && echo "odoo-addon-l10n-ec-credit-note==999.0.0  # Block installation" >> /opt/pip-constraints.txt \
+    && echo "odoo-addon-l10n-ec-withhold==999.0.0     # Block installation" >> /opt/pip-constraints.txt
+ENV PIP_CONSTRAINT=/opt/pip-constraints.txt
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_PYTHON_VERSION_WARNING=1
 # Control addons discovery. INCLUDE and EXCLUDE are comma-separated list of
