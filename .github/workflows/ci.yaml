@@ -43,7 +43,7 @@ jobs:
       postgres:
         image: postgres:14.0
         env:
-          POSTGRES_USER: odoo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
+          POSTGRES_USER: odoo
           POSTGRES_PASSWORD: odoo
           POSTGRES_DB: odoo
         ports:
