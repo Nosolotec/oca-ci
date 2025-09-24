@@ -150,21 +150,6 @@ ARG odoo_config_setting="--config-setting=editable_mode=compat"
 RUN pip install --no-cache-dir -e /opt/odoo $odoo_config_setting \
     && pip list
 
-# Remove OCA l10n-ecuador modules if they got installed (to avoid conflicts with Enterprise)
-RUN echo "Checking for OCA l10n-ecuador modules..." \
-    && pip list | grep -i "l10n-ec" || echo "No l10n-ec modules found" \
-    && echo "Uninstalling OCA l10n-ecuador modules..." \
-    && pip uninstall -y \
-        odoo-addon-l10n-ec-account-edi \
-        odoo-addon-l10n-ec-base \
-        odoo-addon-l10n-ec-credit-note \
-        odoo-addon-l10n-ec-withhold \
-        2>/dev/null || echo "Modules not installed" \
-    && echo "Removing any remaining l10n_ec addons from site-packages..." \
-    && find /opt/odoo-venv/lib/python*/site-packages -name "*l10n_ec*" -type d -exec rm -rf {} + 2>/dev/null || echo "No directories found" \
-    && echo "Final verification - OCA l10n-ecuador modules remaining:" \
-    && (pip list | grep -i "l10n-ec" || echo "None - successfully removed")
-
 # Make an empty odoo.cfg
 RUN echo "[options]" > /etc/odoo.cfg
 ENV ODOO_RC=/etc/odoo.cfg
@@ -181,12 +166,6 @@ ENV PGDATABASE=odoo
 # This PEP 503 index uses odoo addons from OCA and redirects the rest to PyPI,
 # in effect hiding all non-OCA Odoo addons that are on PyPI.
 ENV PIP_INDEX_URL=https://wheelhouse.odoo-community.org/oca-simple-and-pypi
-# Create constraints file to block OCA l10n-ecuador modules that conflict with Enterprise
-RUN echo "# Block OCA l10n-ecuador modules that conflict with Enterprise" > /opt/pip-constraints.txt \
-    && echo "odoo-addon-l10n-ec-account-edi==999.0.0  # Block installation" >> /opt/pip-constraints.txt \
-    && echo "odoo-addon-l10n-ec-base==999.0.0         # Block installation" >> /opt/pip-constraints.txt \
-    && echo "odoo-addon-l10n-ec-credit-note==999.0.0  # Block installation" >> /opt/pip-constraints.txt \
-    && echo "odoo-addon-l10n-ec-withhold==999.0.0     # Block installation" >> /opt/pip-constraints.txt
 ENV PIP_CONSTRAINT=/opt/pip-constraints.txt
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_PYTHON_VERSION_WARNING=1
@@ -195,7 +174,7 @@ ENV PIP_NO_PYTHON_VERSION_WARNING=1
 ENV ADDONS_DIR=.
 ENV ADDONS_PATH=/opt/odoo/addons
 ENV INCLUDE=
-ENV EXCLUDE=l10n_ec_account_edi,l10n_ec_base,l10n_ec_credit_note,l10n_ec_withhold
+ENV EXCLUDE=
 ENV OCA_GIT_USER_NAME=oca-ci
 ENV OCA_GIT_USER_EMAIL=oca-ci@odoo-community.org
 ENV OCA_ENABLE_CHECKLOG_ODOO=
