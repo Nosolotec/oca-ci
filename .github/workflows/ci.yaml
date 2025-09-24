@@ -30,6 +30,7 @@ jobs:
             chrome_milestone: 139
             odoo_version: "18.0"
             odoo_org_repo: "Nosolotec/odoo"
+            odoo_enterprise_org_repo: "Nosolotec/enterprise"
             image_name: py3.10-odoo18.0
             odoo_config_setting: "--config-setting=editable_mode=compat"
           - python_version: "3.10"
