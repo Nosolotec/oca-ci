@@ -81,7 +81,7 @@ RUN apt-get update -qq \
        # some other build tools
        swig \
        libffi-dev \
-       pkg-config
+       pkg-config \
        jq \
        # chrome
        unzip \
