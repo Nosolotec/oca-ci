@@ -134,7 +134,8 @@ RUN sed -i -E "s/^(gevent|greenlet)==.*/\1/" /tmp/ocb-requirements.txt \
 # - websocket-client is required for Odoo browser tests
 RUN pip install --no-cache-dir \
   coverage \
-  websocket-client
+  websocket-client \
+  pdfminer.six
 
 # Install Odoo (use ADD for correct layer caching)
 ADD https://api.github.com/repos/$odoo_org_repo/git/refs/heads/$odoo_version /tmp/odoo-version.json
